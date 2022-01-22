@@ -1,5 +1,6 @@
 package cn.hippo4j.common.config;
 
+import lombok.Setter;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -15,11 +16,12 @@ import java.util.Map;
  */
 public class ApplicationContextHolder implements ApplicationContextAware {
 
-    private static ApplicationContext CONTEXT;
+    @Setter
+    private static ApplicationContext context;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        ApplicationContextHolder.CONTEXT = applicationContext;
+        setContext(applicationContext);
     }
 
     /**
@@ -30,7 +32,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
      * @return
      */
     public static <T> T getBean(Class<T> clazz) {
-        return CONTEXT.getBean(clazz);
+        return context.getBean(clazz);
     }
 
     /**
@@ -42,7 +44,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
      * @return
      */
     public static <T> T getBean(String name, Class<T> clazz) {
-        return CONTEXT.getBean(name, clazz);
+        return context.getBean(name, clazz);
     }
 
     /**
@@ -53,7 +55,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
      * @return
      */
     public static <T> Map<String, T> getBeansOfType(Class<T> clazz) {
-        return CONTEXT.getBeansOfType(clazz);
+        return context.getBeansOfType(clazz);
     }
 
     /**
@@ -65,7 +67,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
      * @return
      */
     public static <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) {
-        return CONTEXT.findAnnotationOnBean(beanName, annotationType);
+        return context.findAnnotationOnBean(beanName, annotationType);
     }
 
     /**
@@ -74,7 +76,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
      * @return
      */
     public static ApplicationContext getInstance() {
-        return CONTEXT;
+        return context;
     }
 
 }
