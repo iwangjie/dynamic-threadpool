@@ -82,13 +82,17 @@ public final class DynamicThreadPoolPostProcessor implements BeanPostProcessor {
             }
 
             DynamicThreadPoolExecutor dynamicExecutor = (DynamicThreadPoolExecutor) bean;
+            // 包装本地线程池
             DynamicThreadPoolWrapper wrap = new DynamicThreadPoolWrapper(dynamicExecutor.getThreadPoolId(), dynamicExecutor);
+            // 优先使用远程线程池配置否则使用本地线程池
             ThreadPoolExecutor remoteExecutor = fillPoolAndRegister(wrap);
+            // 订阅远端更新
             subscribeConfig(wrap);
 
             return remoteExecutor;
         }
 
+        // 如果直接就是一个包装器类型,那么直接注册
         if (bean instanceof DynamicThreadPoolWrapper) {
             DynamicThreadPoolWrapper wrap = (DynamicThreadPoolWrapper) bean;
             registerAndSubscribe(wrap);
@@ -114,7 +118,7 @@ public final class DynamicThreadPoolPostProcessor implements BeanPostProcessor {
      */
     protected ThreadPoolExecutor fillPoolAndRegister(DynamicThreadPoolWrapper dynamicThreadPoolWrap) {
         String tpId = dynamicThreadPoolWrap.getTpId();
-        Map<String, String> queryStrMap = new HashMap(3);
+        Map<String, String> queryStrMap = new HashMap<>(3);
         queryStrMap.put(TP_ID, tpId);
         queryStrMap.put(ITEM_ID, properties.getItemId());
         queryStrMap.put(NAMESPACE, properties.getNamespace());
@@ -125,12 +129,15 @@ public final class DynamicThreadPoolPostProcessor implements BeanPostProcessor {
         PoolParameterInfo ppi = new PoolParameterInfo();
 
         try {
+            // 请求获取配置 get /configs
             result = httpAgent.httpGetByConfig(Constants.CONFIG_CONTROLLER_PATH, null, queryStrMap, 5000L);
             if (result.isSuccess() && result.getData() != null) {
+                // 解析结果 操作两次,是否可优化?
                 String resultJsonStr = JSONUtil.toJSONString(result.getData());
                 if ((ppi = JSONUtil.parseObject(resultJsonStr, PoolParameterInfo.class)) != null) {
                     // 使用相关参数创建线程池
                     BlockingQueue workQueue = QueueTypeEnum.createBlockingQueue(ppi.getQueueType(), ppi.getCapacity());
+                    // 使用远程参数重新创建线程池
                     newDynamicPoolExecutor = ThreadPoolBuilder.builder()
                             .dynamicPool()
                             .workQueue(workQueue)
@@ -152,6 +159,7 @@ public final class DynamicThreadPoolPostProcessor implements BeanPostProcessor {
                         ((DynamicThreadPoolExecutor) newDynamicPoolExecutor).setSupportParam(awaitTerminationMillis, waitForTasksToCompleteOnShutdown);
                     }
 
+                    // 替换掉了本地线程池
                     dynamicThreadPoolWrap.setExecutor(newDynamicPoolExecutor);
                     isSubscribe = true;
                 }
@@ -170,6 +178,7 @@ public final class DynamicThreadPoolPostProcessor implements BeanPostProcessor {
             dynamicThreadPoolWrap.setSubscribeFlag(isSubscribe);
         }
 
+        // 注册到应用全局
         GlobalThreadPoolManage.register(dynamicThreadPoolWrap.getTpId(), ppi, dynamicThreadPoolWrap);
         return newDynamicPoolExecutor;
     }
@@ -181,6 +190,7 @@ public final class DynamicThreadPoolPostProcessor implements BeanPostProcessor {
      */
     protected void subscribeConfig(DynamicThreadPoolWrapper dynamicThreadPoolWrap) {
         if (dynamicThreadPoolWrap.isSubscribeFlag()) {
+            // 订阅并传递 callback
             threadPoolOperation.subscribeConfig(dynamicThreadPoolWrap.getTpId(), executorService, config -> ThreadPoolDynamicRefresh.refreshDynamicPool(config));
         }
     }

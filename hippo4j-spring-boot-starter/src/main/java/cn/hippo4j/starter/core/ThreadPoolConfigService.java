@@ -9,6 +9,7 @@ import java.util.Arrays;
 
 /**
  * ThreadPool config service.
+ * 配置服务类
  *
  * @author chen.ma
  * @date 2021/6/21 21:50

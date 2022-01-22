@@ -30,6 +30,7 @@ public class ClientWorker {
 
     private long timeout;
 
+    // 渴望计数?
     private double currentLongingTaskCount = 0;
 
     private final HttpAgent agent;
@@ -79,19 +80,26 @@ public class ClientWorker {
         }, 1L, 1024L, TimeUnit.MILLISECONDS);
     }
 
+    // 循环注册长连接线程池配置更新检查
     public void checkConfigInfo() {
         int listenerSize = cacheMap.size();
         double perTaskConfigSize = 3000D;
+        // 计算需要挂多少个线程来轮训配置,3000个线程池用一个线程来轮询
         int longingTaskCount = (int) Math.ceil(listenerSize / perTaskConfigSize);
 
+        // 如果这次检查的时候比原来多了,追加新线程
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
+                // 注册
                 executorService.execute(new LongPollingRunnable());
             }
             currentLongingTaskCount = longingTaskCount;
         }
     }
 
+    /**
+     * 长连接轮训配置实现
+     */
     class LongPollingRunnable implements Runnable {
 
         @Override
@@ -103,14 +111,17 @@ public class ClientWorker {
             List<String> inInitializingCacheList = new ArrayList();
             cacheMap.forEach((key, val) -> cacheDataList.add(val));
 
+            // 获取变更了配置的线程池id列表
             List<String> changedTpIds = checkUpdateDataIds(cacheDataList, inInitializingCacheList);
             for (String groupKey : changedTpIds) {
+                // + 号分隔  tpId+itemId+namespace
                 String[] keys = groupKey.split(GROUP_KEY_DELIMITER_TRANSLATION);
                 String tpId = keys[0];
                 String itemId = keys[1];
                 String namespace = keys[2];
 
                 try {
+                    // 获取详细的变更
                     String content = getServerConfig(namespace, itemId, tpId, 3000L);
                     CacheData cacheData = cacheMap.get(tpId);
                     String poolContent = ContentUtil.getPoolContent(JSONUtil.parseObject(content, PoolParameterInfo.class));
@@ -130,6 +141,7 @@ public class ClientWorker {
             }
 
             inInitializingCacheList.clear();
+            // 把自己重新放回线程池.... 好骚的操作
             executorService.execute(this);
         }
     }
@@ -157,6 +169,7 @@ public class ClientWorker {
         params.put(PROBE_MODIFY_REQUEST, probeUpdateString);
         params.put(WEIGHT_CONFIGS, IdUtil.simpleUUID());
         Map<String, String> headers = new HashMap(2);
+        // 长连接
         headers.put(LONG_PULLING_TIMEOUT, "" + timeout);
 
         // 确认客户端身份, 修改线程池配置时可单独修改
@@ -173,9 +186,11 @@ public class ClientWorker {
 
         try {
             long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
+            // 发送监听请求 长连接 等待 3000ms
             Result result = agent.httpPostByConfig(LISTENER_PATH, headers, params, readTimeoutMs);
 
             if (result != null && result.isSuccess()) {
+                // 处理响应
                 return parseUpdateDataIdResponse(result.getData().toString());
             }
         } catch (Exception ex) {

@@ -72,6 +72,7 @@ public class DynamicThreadPoolAutoConfiguration {
         return new ApplicationContextHolder();
     }
 
+    // 配置服务类
     @Bean
     @SuppressWarnings("all")
     public ConfigService configService(HttpAgent httpAgent, InetUtils hippo4JInetUtils, ServerHealthCheck serverHealthCheck) {
@@ -79,11 +80,13 @@ public class DynamicThreadPoolAutoConfiguration {
         return new ThreadPoolConfigService(httpAgent, identify, serverHealthCheck);
     }
 
+    // 线程池操作类
     @Bean
     public ThreadPoolOperation threadPoolOperation(ConfigService configService) {
         return new ThreadPoolOperation(properties, configService);
     }
 
+    // 动态线程池解析器/处理器
     @Bean
     @SuppressWarnings("all")
     public DynamicThreadPoolPostProcessor threadPoolBeanPostProcessor(HttpAgent httpAgent, ThreadPoolOperation threadPoolOperation,
