@@ -145,6 +145,7 @@ public class DynamicThreadPoolAutoConfiguration {
         return new WebThreadPoolRunStateHandler();
     }
 
+    // tomcat 容器接口
     @Bean
     @ConditionalOnBean(name = "tomcatServletWebServerFactory")
     public TomcatWebThreadPoolHandler tomcatWebThreadPoolHandler() {

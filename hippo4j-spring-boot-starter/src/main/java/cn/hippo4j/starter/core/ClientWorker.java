@@ -105,6 +105,7 @@ public class ClientWorker {
         @Override
         @SneakyThrows
         public void run() {
+            // 判断服务器健康
             serverHealthCheck.isHealthStatus();
 
             List<CacheData> cacheDataList = new ArrayList();
@@ -125,6 +126,7 @@ public class ClientWorker {
                     String content = getServerConfig(namespace, itemId, tpId, 3000L);
                     CacheData cacheData = cacheMap.get(tpId);
                     String poolContent = ContentUtil.getPoolContent(JSONUtil.parseObject(content, PoolParameterInfo.class));
+                    // 更新缓存
                     cacheData.setContent(poolContent);
                 } catch (Exception ex) {
                     // ignore
@@ -132,6 +134,7 @@ public class ClientWorker {
                 }
             }
 
+            // 循环缓存,目的是将 md5 不一致的通知变更,很骚很骚!
             for (CacheData cacheData : cacheDataList) {
                 if (!cacheData.isInitializing() || inInitializingCacheList
                         .contains(GroupKey.getKeyTenant(cacheData.tpId, cacheData.itemId, cacheData.tenantId))) {
