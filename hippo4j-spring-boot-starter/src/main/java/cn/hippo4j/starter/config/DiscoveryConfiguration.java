@@ -26,7 +26,7 @@ import static cn.hippo4j.starter.toolkit.CloudCommonIdUtil.getIpApplicationName;
  * @date 2021/8/6 21:35
  */
 @AllArgsConstructor
-public class DiscoveryConfig {
+public class DiscoveryConfiguration {
 
     private final ConfigurableEnvironment environment;
 
@@ -40,7 +40,7 @@ public class DiscoveryConfig {
         String namespace = properties.getNamespace();
         String itemId = properties.getItemId();
         String port = environment.getProperty("server.port");
-        String applicationName = environment.getProperty("spring.application.name");
+        String applicationName = environment.getProperty("spring.dynamic.thread-pool.item-id");
         String active = environment.getProperty("spring.profiles.active", "UNKNOWN");
 
         InstanceInfo instanceInfo = new InstanceInfo();

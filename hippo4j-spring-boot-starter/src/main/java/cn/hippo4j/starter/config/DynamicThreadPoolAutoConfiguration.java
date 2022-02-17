@@ -27,6 +27,7 @@ import cn.hippo4j.starter.toolkit.IdentifyUtil;
 import cn.hippo4j.starter.toolkit.inet.InetUtils;
 import cn.hutool.core.util.IdUtil;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -50,7 +51,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 @ConditionalOnBean(MarkerConfiguration.Marker.class)
 @EnableConfigurationProperties(BootstrapProperties.class)
 @ConditionalOnProperty(prefix = BootstrapProperties.PREFIX, value = "enable", matchIfMissing = true, havingValue = "true")
-@ImportAutoConfiguration({HttpClientConfig.class, DiscoveryConfig.class, MessageAlarmConfig.class, UtilAutoConfiguration.class})
+@ImportAutoConfiguration({HttpClientConfiguration.class, DiscoveryConfiguration.class, MessageAlarmConfiguration.class, UtilAutoConfiguration.class})
 public class DynamicThreadPoolAutoConfiguration {
 
     private final BootstrapProperties properties;
@@ -146,13 +147,7 @@ public class DynamicThreadPoolAutoConfiguration {
     // tomcat 容器接口
     @Bean
     @ConditionalOnBean(name = "tomcatServletWebServerFactory")
-    public TomcatWebThreadPoolHandler tomcatWebThreadPoolHandler() {
-        ServletWebServerApplicationContext applicationContext = null;
-        try {
-            applicationContext = ApplicationContextHolder.getBean(ServletWebServerApplicationContext.class);
-        } catch (Exception ex) {
-            // ignore
-        }
+    public TomcatWebThreadPoolHandler tomcatWebThreadPoolHandler(@Autowired(required = false) ServletWebServerApplicationContext applicationContext) {
         return new TomcatWebThreadPoolHandler(applicationContext);
     }
 
