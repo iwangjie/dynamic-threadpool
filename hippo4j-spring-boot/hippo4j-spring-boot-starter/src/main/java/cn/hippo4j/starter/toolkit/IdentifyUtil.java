@@ -39,7 +39,7 @@ public class IdentifyUtil {
         // 构建实例识别代码
         // 192.168.40.84:9006_uuid
         String ip = hippo4JInetUtils.findFirstNonLoopbackHostInfo().getIpAddress();
-        String port = environment.getProperty("server.port");
+        String port = environment.getProperty("server.port", "8080");
         String identification = StrUtil.builder(ip,
                 ":",
                 port,
